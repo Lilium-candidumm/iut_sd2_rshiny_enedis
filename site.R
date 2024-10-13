@@ -7,10 +7,15 @@ library(DT) # Render datatable
 library(dplyr) # Tri données
 library(ggplot2) # Graphiques
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Importer le csv
+
+base = read.csv('./Données/base_de_donnees.csv',sep = ",",dec = ".")
 
 
-existants = read.csv('./Données/base_de_donnees.csv',sep = ",",dec = ".")
+
+
+# Base des comptes
 
 user_base <- tibble::tibble(
   user = c("mtabo", "lmich"),
@@ -21,6 +26,8 @@ user_base <- tibble::tibble(
 
 
   
+# Ui de la page de login, si c'est bon, on affiche le reste
+
 ui <- dashboardPage(
   dashboardHeader(
     title = "Les DPE du Rhône",
@@ -46,7 +53,7 @@ ui <- dashboardPage(
   
   
   
-  
+# Le server pour le login
 
 server <- function(input, output) {
   
@@ -60,16 +67,25 @@ server <- function(input, output) {
     log_out = reactive(logout_init())
   )
   
-  # Logout functionality
+
   logout_init <- shinyauthr::logoutServer(
     id = "logout",
     active = reactive(credentials()$user_auth)
   )
   
-  # Sidebar rendering logic based on authentication
+
+  
+  
+  
+  
+  #Si le login est bon on affiche le reste du contenu
+  
   output$sidebarpanel <- renderUI({
-    req(credentials()$user_auth)  # Show only if authenticated
+    req(credentials()$user_auth)  
     
+    
+   ################################Interface#################
+     
     sidebarMenu(
       menuItem("Accueil", tabName = "Accueil", icon = icon("home")),
       menuItem("Vue d'ensemble", tabName = "VueEnsemble", icon = icon("eye")),
@@ -78,11 +94,11 @@ server <- function(input, output) {
       menuItem("Explorer les données", tabName = "visu_donnees", icon = icon("list-alt")),
       selectInput(inputId = "departement_sidebar", 
                   label = "Filtrer par département :",
-                  choices = c(sort(unique(existants$Code_postal_.BAN.))), 
+                  choices = c(sort(unique(base$Code_postal_.BAN.))), 
                   multiple = TRUE),
       checkboxGroupInput(inputId = "type_batiment", 
                    label = "Sélectionner le Type de Bâtiment:",
-                   choices = sort(unique(existants$Type_bâtiment)), 
+                   choices = sort(unique(base$Type_bâtiment)), 
                    inline = TRUE) 
     )
   })
@@ -143,9 +159,9 @@ server <- function(input, output) {
       tabItem(tabName = "VueEnsemble",
               fluidPage(
                 fluidRow(
-                  infoBox("Nombre de DPE",length(existants$N.DPE), icon = icon("file"),color = "teal"),
-                  infoBox("Moyennne du coût de chauffage/an",paste(round(mean(existants$Coût_chauffage, na.rm = TRUE),2),'€',sep = " "),icon = icon("fire"),color = "maroon"),
-                  infoBox("Moyenne des emissions de CO2/an",paste(round(mean(existants$Emission_GES_5_usages,na.rm = TRUE),2),"kg de CO2/an",sep = " "),icon = icon("leaf"),color = "olive")
+                  infoBox("Nombre de DPE",length(base$N.DPE), icon = icon("file"),color = "teal"),
+                  infoBox("Moyennne du coût de chauffage/an",paste(round(mean(base$Coût_chauffage, na.rm = TRUE),2),'€',sep = " "),icon = icon("fire"),color = "maroon"),
+                  infoBox("Moyenne des emissions de CO2/an",paste(round(mean(base$Emission_GES_5_usages,na.rm = TRUE),2),"kg de CO2/an",sep = " "),icon = icon("leaf"),color = "olive")
                 ),
                 
                 fluidRow(
@@ -180,14 +196,10 @@ server <- function(input, output) {
  ###################################Carte###############################
  
       tabItem(tabName = 'carte',
-              card(
-                tags$style(type = "text/css", "
-    #carte {
-      height: 90vh !important;  
-    }
-  "),
+              fluidPage(
+
                 
-                leafletOutput(outputId = "carte", width = '100%')
+                leafletOutput(outputId = "carte", width = '100%',height = '90vh')
               )
               
       ),
@@ -262,13 +274,13 @@ server <- function(input, output) {
                   column(2,
                          selectInput("departement",
                                      "Départment:",
-                                     choices = c(sort(unique(existants$Code_postal_.BAN.))),
+                                     choices = c(sort(unique(base$Code_postal_.BAN.))),
                                      multiple = TRUE)
                   ),
                   column(2,
                          selectInput("Etiquette_DPE",
                                      "Etiquette DPE:",
-                                     choices = c(sort(unique(existants$Etiquette_DPE))),
+                                     choices = c(sort(unique(base$Etiquette_DPE))),
                                      multiple = TRUE)
                   ),
                   column(2,
@@ -308,8 +320,8 @@ server <- function(input, output) {
   
   
   df_filtre <- reactive({
-    # Commencer avec l'ensemble de données existants
-    data <- existants
+    # Commencer avec l'ensemble de données base
+    data <- base
     
     # Filtrer par département si des valeurs sont sélectionnées
     if (!is.null(input$departement_sidebar) && length(input$departement_sidebar) > 0) {
@@ -400,17 +412,17 @@ server <- function(input, output) {
   ####################################Carte##########################################
   
   output$carte = renderLeaflet({
-    leaflet(existants) %>% 
+    leaflet(base) %>% 
       addTiles() %>% 
       addMarkers(~lon, 
                  ~lat,
                  clusterOptions = markerClusterOptions(),
-                 popup = paste(existants$numero," ",existants$nom_voie,", ",
-                               existants$nom_commune," ",existants$code_postal,
-                               "<br>","Etiquette DPE: ",existants$Etiquette_DPE,
-                               "<br>","Etiquette GES: ",existants$Etiquette_GES,
-                               "<br>","Type d'énergie chauffage: ",existants$Type_énergie_principale_chauffage,
-                               "<br>","Coût du chauffage:",existants$Coût_chauffage," €",
+                 popup = paste(base$numero," ",base$nom_voie,", ",
+                               base$nom_commune," ",base$code_postal,
+                               "<br>","Etiquette DPE: ",base$Etiquette_DPE,
+                               "<br>","Etiquette GES: ",base$Etiquette_GES,
+                               "<br>","Type d'énergie chauffage: ",base$Type_énergie_principale_chauffage,
+                               "<br>","Coût du chauffage:",base$Coût_chauffage," €",
                                sep = "")
       )
   })
@@ -420,7 +432,7 @@ server <- function(input, output) {
   df_sample <- reactiveVal(data.frame())
   
   observeEvent(input$refresh, {
-    df_filtered <- existants %>%
+    df_filtered <- base %>%
       filter(!is.na(!!sym(input$x)) & 
                !is.na(!!sym(input$y)) & 
                (!!sym(input$x)) != 0 & 
@@ -508,7 +520,7 @@ server <- function(input, output) {
           annotate("text", x = Inf, y = Inf, 
                    label = paste("Coefficient de corrélation =", round(cor_coef, 4)), 
                    hjust = 1.1, vjust = 1.1, size = 5, color = "red", fontface = "bold") +
-          theme_minimal()  # Appliquer un thème si nécessaire
+          theme_minimal()  
         
         print(graph)
       }
@@ -522,7 +534,7 @@ server <- function(input, output) {
   
   output$donnees = renderDataTable({
     
-    donnees_filtrees = existants
+    donnees_filtrees = base
     
     
     if(!is.null(input$departement)){
@@ -558,7 +570,7 @@ server <- function(input, output) {
     },
     content = function(file) {
     
-      donnees_filtrees = existants
+      donnees_filtrees = base
       
       if (!is.null(input$departement)) {
         donnees_filtrees = donnees_filtrees %>% 
