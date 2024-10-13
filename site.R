@@ -1,11 +1,11 @@
-library(shiny) # Site
-library(shinydashboard) # Mise en forme 
-library(bslib) # Mise en forme 
-library(fontawesome) # Icones
-library(leaflet) # Carte
-library(DT) # Render datatable
-library(dplyr) # Tri données
-library(ggplot2) # Graphiques
+if (!require(shiny)) install.packages("shiny") # Site
+if (!require(shinydashboard)) install.packages("shinydashboard") # Mise en forme 
+if (!require(bslib)) install.packages("bslib") # Mise en forme 
+if (!require(fontawesome)) install.packages("fontawesome") # Icones
+if (!require(leaflet)) install.packages("leaflet") # Carte
+if (!require(DT)) install.packages("DT") # Render datatable
+if (!require(dplyr)) install.packages("dplyr") # Tri données
+if (!require(ggplot2)) install.packages("ggplot2") # Graphiques
 
 
 # Importer le csv
